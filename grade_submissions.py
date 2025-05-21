@@ -10,7 +10,9 @@ MODEL_NAME = "deepseek-r1:8b"
 
 CODE_FOLDER = r"C:\Users\Nikhil\Desktop\PROJECT_GRADER\submissions"
 MODEL_ANSWER_PATH = "./model_solution.py"
-USE_MODEL_ANSWER = False    
+USE_MODEL_ANSWER = False   
+question = None
+extra_guidelines = None
 
 OUTPUT_BASE = os.path.join(CODE_FOLDER, "graded_submissions")
 
@@ -23,16 +25,25 @@ def read_file(path):
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
 
-def generate_prompt(student_code, model_answer=None):
+def generate_prompt(student_code, question=None, model_answer=None, extra_guidelines=None):
     prompt = (
         "You are a strict but fair programming examiner.\n"
-        "Grade the following code out of 10. Just give one final score in the format 'X/10' anywhere in the response — no decimals or sub-scores.\n"
-        "After the score, give a short justification (a few lines).\n\n"
-        "Student's Code:\n```c\n" + student_code.strip() + "\n```\n"
+        "Grade the following code out of 10. Just give one final score in the format 'X/10' — no decimals or sub-scores.\n"
     )
+
+    if extra_guidelines:
+        prompt += "\nGuidelines:\n" + extra_guidelines.strip() + "\n"
+
+    if question:
+        prompt += "\nQuestion:\n" + question.strip() + "\n"
+
+    prompt += "\nStudent's Code:\n```c\n" + student_code.strip() + "\n```\n"
+
     if model_answer:
         prompt += "\nModel Answer:\n```c\n" + model_answer.strip() + "\n```\n"
+
     return prompt
+
 
 
 def query_ollama(prompt):
@@ -105,7 +116,7 @@ def main():
         base = os.path.splitext(os.path.basename(file))[0]
         print(f"[{i}/{len(files)}] Grading {base}...")
         student_code = read_file(file)
-        prompt = generate_prompt(student_code, model_answer)
+        prompt = generate_prompt(student_code , question, model_answer, extra_guidelines)
         feedback = query_ollama(prompt)
         print(feedback)
         base, score = save_results(file, feedback)
